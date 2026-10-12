@@ -1,0 +1,8 @@
+{
+  "manifest_version": 3,
+  "name": "Caça Ofertas IA — Capturador",
+  "version": "0.1.0",
+  "description": "Capture produtos da página atual e organize uma fila local para o Caça Ofertas IA.",
+  "permissions": ["activeTab", "scripting", "storage", "tabs"],
+  "action": {"default_title": "Capturar produto", "default_popup": "popup.html"}
+}
