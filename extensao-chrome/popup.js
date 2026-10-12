@@ -74,3 +74,16 @@ $("clear").addEventListener("click",async()=>{
   await chrome.storage.local.set({products:[]});await refreshCount();$("status").textContent="Fila limpa.";
 });
 inspectTab();refreshCount();
+$("multi").addEventListener("click", async () => {
+  const [tab] = await chrome.tabs.query({active:true,currentWindow:true});
+  if (!tab?.id || !/^https?:/.test(tab.url || "")) {
+    $("status").textContent = "Abra primeiro uma página de produtos.";
+    return;
+  }
+  try {
+    await chrome.scripting.executeScript({target:{tabId:tab.id},files:["overlay.js"]});
+    window.close();
+  } catch (error) {
+    $("status").textContent = "Não foi possível abrir o seletor nesta página. Tente recarregar a página e novamente.";
+  }
+});
