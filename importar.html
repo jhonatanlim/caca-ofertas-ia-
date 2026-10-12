@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Importar produtos · Caça Ofertas IA</title>
+<style>
+:root{color-scheme:dark;--bg:#0c0913;--panel:#181226;--line:#33284c;--fg:#efeaf8;--muted:#b5a8cb;--purple:#8b5cf6;--green:#34d399}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:15px system-ui,sans-serif;padding:24px;max-width:760px;margin:auto}
+header{display:flex;align-items:center;gap:12px;margin-bottom:24px}.logo{background:linear-gradient(135deg,#8b5cf6,#3b2478);padding:14px;border-radius:14px;font-size:24px}h1{font-size:23px;margin:0}p{color:var(--muted);line-height:1.5}.panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:20px;margin:16px 0}
+input[type=file]{display:block;width:100%;margin:16px 0;padding:12px;background:#221a35;border:1px dashed #66508a;border-radius:10px;color:var(--fg)}
+button,a.button{display:inline-block;background:var(--purple);color:white;text-decoration:none;border:0;border-radius:10px;padding:12px 16px;font-weight:700;cursor:pointer}
+button:disabled{opacity:.5;cursor:default}.muted{font-size:13px;color:var(--muted)}.status{margin-top:14px;white-space:pre-wrap;line-height:1.5}.ok{color:var(--green)}.preview{max-height:280px;overflow:auto}.item{padding:10px 0;border-bottom:1px solid var(--line)}.item:last-child{border-bottom:0}.price{color:var(--green);font-weight:700}
+</style></head><body>
+<header><div class="logo">🛒</div><div><h1>Importar produtos</h1><p>Caça Ofertas IA · Extensão Chrome</p></div></header>
+<section class="panel">
+<h2>Traga sua fila para o painel</h2>
+<p>Na extensão, clique em <b>Exportar JSON</b> e selecione o arquivo aqui. Os produtos serão adicionados ao armazenamento local deste navegador, sem apagar os produtos existentes.</p>
+<input id="file" type="file" accept=".json,application/json">
+<div id="preview" class="preview"></div>
+<button id="import" disabled>Importar produtos selecionados</button>
+<div id="status" class="status" role="status"></div>
+<p class="muted">Importar no mesmo navegador e domínio do painel. Esta ferramenta não envia dados para um servidor. Revise os preços e links após a importação.</p>
+<a class="button" href="./">Voltar ao painel</a>
+</section>
+<script>
+(function(){
+'use strict';
+var KEY='cacaofertas.v1', incoming=[];
+var $=id=>document.getElementById(id);
+function parsePrice(v){
+ if(typeof v==='number'&&isFinite(v))return v;
+ if(v==null||v==='')return null;
+ var s=String(v).replace(/[^0-9,.]/g,'');
+ if(!s)return null;
+ if(s.includes(',')&&s.includes('.'))s=s.lastIndexOf(',')>s.lastIndexOf('.')?s.replace(/\./g,'').replace(',','.'):s.replace(/,/g,'');
+ else if(s.includes(','))s=s.replace(',','.');
+ var n=Number(s);return Number.isFinite(n)&&n>0?n:null;
+}
+function normalize(x){
+ if(!x||typeof x!=='object')return null;
+ var url=String(x.url||'').trim(), name=String(x.title||x.name||'').trim();
+ if(!url||!/^https?:\/\//i.test(url)||!name)return null;
+ var price=parsePrice(x.price!=null?x.price:x.currentPrice);
+ var store=String(x.site||x.store||(()=>{try{return new URL(url).hostname.replace(/^www\./,'')}catch(e){return 'Loja desconhecida'}})());
+ var now=new Date().toISOString();
+ return {id:'imp_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,7),origin:'extension',name:name,store:store,category:'Outros',cat:'Outros',url:url,currentPrice:price||0,targetPrice:price||0,history:price?[{date:now,price:price,source:'captura-extensao'}]:[],createdAt:now,updatedAt:now,image:String(x.image||''),priceNeedsReview:!price,affiliateLinkConfirmed:!!x.affiliateLinkConfirmed};
+}
+function render(){
+ $('preview').innerHTML=incoming.length?'<p><b>'+incoming.length+' produto(s) reconhecido(s)</b></p>'+incoming.map((p,i)=>'<div class="item"><b>'+esc(p.name)+'</b><div class="muted">'+esc(p.store)+' · '+esc(p.url)+'</div><div class="price">'+(p.currentPrice?new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(p.currentPrice):'Preço precisa ser preenchido')+'</div><label><input type="checkbox" data-index="'+i+'" checked> Importar</label></div>').join(''):'<p class="muted">Selecione o JSON exportado pela extensão para ver a prévia.</p>';
+ $('import').disabled=!incoming.length;
+}
+function esc(s){return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+$('file').addEventListener('change',async e=>{
+ $('status').textContent='';incoming=[];
+ var f=e.target.files&&e.target.files[0];if(!f){render();return;}
+ try{
+  var data=JSON.parse(await f.text());if(!Array.isArray(data))throw new Error('O arquivo precisa conter uma lista JSON.');
+  incoming=data.map(normalize).filter(Boolean);
+  render();$('status').textContent='Confira os produtos e desmarque os que não deseja importar.';
+ }catch(err){$('status').textContent='Não consegui ler esse arquivo: '+err.message;render();}
+});
+$('import').addEventListener('click',()=>{
+ var selected=[...$('preview').querySelectorAll('input[type=checkbox]:checked')].map(el=>incoming[Number(el.dataset.index)]);
+ if(!selected.length){$('status').textContent='Selecione pelo menos um produto.';return;}
+ var db;
+ try{db=JSON.parse(localStorage.getItem(KEY)||'null');}catch(e){db=null;}
+ if(!db||!Array.isArray(db.products))db={version:1,products:[]};
+ var existing=new Set(db.products.map(p=>p.url));
+ var fresh=selected.filter(p=>!existing.has(p.url));
+ if(!fresh.length){$('status').textContent='Todos os links selecionados já existem no painel.';return;}
+ db.products=fresh.concat(db.products);localStorage.setItem(KEY,JSON.stringify(db));
+ $('status').innerHTML='<span class="ok">Importação concluída: '+fresh.length+' produto(s) adicionado(s). Os duplicados foram ignorados.</span> Abra o painel para conferir.';
+ $('import').disabled=true;
+});
+render();
+})();
+</script></body></html>
