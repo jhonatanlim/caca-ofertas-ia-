@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Caça Ofertas IA</title>
+<style>
+:root{color-scheme:dark;--bg:#100b19;--panel:#1c1429;--line:#38284f;--text:#f4efff;--muted:#b5a8cb;--purple:#8b5cf6;--green:#34d399}
+*{box-sizing:border-box}body{margin:0;width:340px;padding:16px;background:var(--bg);color:var(--text);font:14px system-ui,-apple-system,sans-serif}
+header{display:flex;gap:10px;align-items:center;margin-bottom:14px}.logo{display:grid;place-items:center;width:42px;height:42px;border-radius:13px;background:linear-gradient(135deg,#8b5cf6,#5424a8);font-size:22px}h1{font-size:16px;margin:0}p{margin:4px 0;color:var(--muted);font-size:12px;line-height:1.45}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:12px;margin:10px 0}.product-title{font-weight:650;line-height:1.35;margin-bottom:6px;overflow-wrap:anywhere}.meta{font-size:12px;color:var(--muted);overflow-wrap:anywhere}.price{font-size:18px;font-weight:800;color:var(--green);margin:7px 0}
+button{border:0;border-radius:10px;padding:10px 12px;font:600 13px system-ui;cursor:pointer;width:100%;margin-top:8px;background:var(--purple);color:white}button.secondary{background:#2a203b;border:1px solid var(--line)}button.danger{background:#4b202c}button:disabled{opacity:.5;cursor:default}.row{display:flex;gap:8px}.row button{flex:1}.status{min-height:18px;color:var(--muted);font-size:12px;margin-top:8px}.count{font-weight:700;color:#d6c4ff}.note{font-size:11px;color:var(--muted);margin-top:12px}
+</style></head><body>
+<header><div class="logo">🛒</div><div><h1>Caça Ofertas IA</h1><p>Capturador de produtos · versão 0.1</p></div></header>
+<p>Abra uma página de produto e clique em capturar. Os itens ficam guardados localmente nesta extensão.</p>
+<section class="card"><div class="product-title" id="productTitle">Lendo página…</div><div class="price" id="productPrice"></div><div class="meta" id="productUrl"></div><button id="capture">＋ Capturar produto desta página</button><div class="status" id="status" role="status"></div></section>
+<section class="card"><div><strong>Fila local:</strong> <span class="count" id="count">0 produtos</span></div><p>A fila fica neste navegador. Ainda não sincroniza com o painel nem envia ofertas automaticamente.</p><div class="row"><button id="export" class="secondary">Exportar JSON</button><button id="open" class="secondary">Abrir painel</button></div><button id="clear" class="danger">Limpar fila</button></section>
+<div class="note">Confira preço, disponibilidade e link de afiliado antes de divulgar. A extensão não cria nem altera links de afiliado automaticamente.</div><script src="popup.js"></script></body></html>
